@@ -53,6 +53,18 @@ class Transaction:
         self.p_from = p_from
         self.p_to = p_to
         self.amount = amount
+        self.rounded_amount = round(self.amount, 1)
+
+    def get_rounding_error(self):
+        return abs(self.rounded_amount - self.amount)
+
+
+class TransactionCombo:
+    def __init__(self, transactions):
+        self.transactions = transactions
+
+    def get_rounding_error(self):
+        return sum([t.get_rounding_error() for t in self.transactions])
 
 
 def get_possible_transactions(participants, transactions):
@@ -79,28 +91,43 @@ def get_possible_transactions(participants, transactions):
     return possible_transactions
 
 
-def get_transactions(participants, already_made_transactions):
+def get_transaction_combos(participants, already_made_transactions):
     possible_transactions = get_possible_transactions(
         participants, already_made_transactions
     )
     if not possible_transactions:
-        yield already_made_transactions
+        yield TransactionCombo(already_made_transactions)
         return
 
     for possible_transaction in possible_transactions:
         transactions = already_made_transactions[:]
         transactions.append(possible_transaction)
-        for combo in get_transactions(participants, transactions):
+        for combo in get_transaction_combos(participants, transactions):
             yield combo
 
 
+def get_least_transfers_combos(combos):
+    least_transfers_combos = sorted(combos, key=lambda combo: len(combo.transactions))
+    min_transfers = len(least_transfers_combos[0].transactions)
+    for combo in least_transfers_combos:
+        if len(combo.transactions) == min_transfers:
+            yield combo
+        else:
+            return
+
+
+def get_least_rounding_errors_combo(combos):
+    least_rounding_error = sorted(combos, key=lambda combo: combo.get_rounding_error())
+    return least_rounding_error[0]
+
+
 def get_best_transactions(participants):
-    transaction_combos = list(get_transactions(participants, []))
-    transaction_combos.sort(key=lambda combo: len(combo))
-    return transaction_combos[0]
+    return get_least_rounding_errors_combo(
+        get_least_transfers_combos(get_transaction_combos(participants, []))
+    )
 
 
-def print_results(participants, transactions):
+def print_results(participants, combo):
     print("Name\tCosts\tPayments\tTo pay\tTo receive")
     for p in participants:
         print(
@@ -110,8 +137,9 @@ def print_results(participants, transactions):
         )
     print()
     print("Transactions:")
-    for t in transactions:
-        print("{} => {}: {:.2f}".format(t.p_from.name, t.p_to.name, t.amount))
+    for t in combo.transactions:
+        print("{} => {}: {:.2f}".format(t.p_from.name, t.p_to.name, t.rounded_amount))
+    print("Total rounding error: {:.2f}".format(combo.get_rounding_error()))
 
 
 def main():
