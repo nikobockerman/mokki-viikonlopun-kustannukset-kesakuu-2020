@@ -2,7 +2,7 @@
     "participants": ["Timo", "Niko", "Ville", "Sami", "Tapio", "Tomi"],
     "payments": {
         "Timo": {"yhteinen": 75},
-        "Ville": {"yhteinen": 40, "Tapio": 8.5},
+        "Ville": {"yhteinen": 40},
         "Niko": {
             "yhteinen": 35,
             "Timo": 10.5,
