@@ -1,5 +1,8 @@
 # Mökkiviikonlopun kustannusten tasaus
 
+Suorita seuraava komento suorittaaksesi laskut ja saadaksesi alla olevan tulosteen:
+`python3 calculate.py`
+
 ## Tämän hetkinen tilanne:
 ```
 Name	Costs	Payments	To pay	To receive
@@ -11,9 +14,10 @@ Tapio	66.33	35.00		31.33	0.00
 Tomi	41.33	0.00		41.33	0.00
 
 Transactions:
-Sami => Timo: 14.33
-Tapio => Timo: 19.34
-Tapio => Niko: 11.99
-Tomi => Niko: 34.18
-Tomi => Ville: 7.15
+Sami => Timo: 14.30
+Tapio => Ville: 7.20
+Tapio => Niko: 24.20
+Tomi => Niko: 22.00
+Tomi => Timo: 19.30
+Total rounding error: 0.13
 ```
