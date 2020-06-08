@@ -1,8 +1,6 @@
 # Mökkiviikonlopun kustannusten tasaus
 
-**Tapion polttoainekustannukset puuttuvat vielä**
-
-## Tämän hetkinen jako:
+## Tämän hetkinen tilanne:
 ```
 	Costs	Payments	To pay	To receive
 Ville	40.5	48.5		0	8.0
