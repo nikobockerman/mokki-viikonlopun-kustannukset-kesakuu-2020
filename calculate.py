@@ -1,16 +1,12 @@
 # Input data, first key is intended payer, second key is original payer.
 # Payments with intended payer "kaikki" get shared amongs all participants.
 payments = {
-    "kaikki": {
-        "Timo": 75,
-        "Niko": 35,
-        "Ville": 40,
-        "Tapio": 0,  # FIXME: Polttoainekustannukset
-    },
+    "kaikki": {"Timo": 75, "Niko": 35, "Ville": 40, "Tapio": 35},
     "Timo": {"Niko": 10.5},
     "Sami": {"Niko": 10.5},
     "Tomi": {"Niko": 10.5},
     "Ville": {"Niko": 10.5},
+    "Tapio": {"Ville": 8.5, "Sami": 27},
 }
 participants = ["Timo", "Niko", "Ville", "Sami", "Tapio", "Tomi"]
 
