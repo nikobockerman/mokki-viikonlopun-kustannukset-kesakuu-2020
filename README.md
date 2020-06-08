@@ -1,7 +1,7 @@
 # Mökkiviikonlopun kustannusten tasaus
 
 Suorita seuraava komento suorittaaksesi laskut ja saadaksesi alla olevan tulosteen:
-`python3 calculate.py`
+`python3 calculate.py data.json`
 
 ## Tämän hetkinen tilanne:
 ```

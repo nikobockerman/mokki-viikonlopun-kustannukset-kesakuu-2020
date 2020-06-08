@@ -1,45 +1,41 @@
 #!/usr/bin/env python3
 
-input_data = {
-    "participants": ["Timo", "Niko", "Ville", "Sami", "Tapio", "Tomi"],
-    # payments: First key is original payer, second key is intended payer.
-    # Payments with intended payer "yhteinen" get shared amongst all participants.
-    "payments": {
-        "Timo": {"yhteinen": 75},
-        "Ville": {"yhteinen": 40, "Tapio": 8.5},
-        "Niko": {
-            "yhteinen": 35,
-            "Timo": 10.5,
-            "Sami": 10.5,
-            "Tomi": 10.5,
-            "Ville": 10.5,
-        },
-        "Tapio": {"yhteinen": 35},
-        "Sami": {"Tapio": 27},
-    },
-}
-
-payments = input_data["payments"]
-shared_costs = sum([value.get("yhteinen", 0) for value in payments.values()])
-# print("Shared costs: {}".format(shared_costs))
+import click
+import json
 
 
-def get_participant_costs(name):
-    shared = shared_costs / len(input_data["participants"]) * 100 // 1 / 100
-    pays = [value.get(name, 0) for value in payments.values()]
-    # print("{}: shared={}; payments={} => {}".format(name, shared, pays, sum(pays)))
-    return shared + sum(pays)
+class Data:
+    def __init__(self):
+        self.rounding = 1
+        self.data = None
 
+    @property
+    def payments(self):
+        return self.data["payments"]
 
-def get_participant_payments(name):
-    return sum(payments.get(name, {}).values())
+    @property
+    def participants(self):
+        return self.data["participants"]
+
+    @property
+    def shared_costs(self):
+        return sum([value.get("yhteinen", 0) for value in self.payments.values()])
+
+    def get_participant_costs(self, name):
+        shared = self.shared_costs / len(self.participants) * 100 // 1 / 100
+        pays = [value.get(name, 0) for value in self.payments.values()]
+        # print("{}: shared={}; payments={} => {}".format(name, shared, pays, sum(pays)))
+        return shared + sum(pays)
+
+    def get_participant_payments(self, name):
+        return sum(self.payments.get(name, {}).values())
 
 
 class Participant:
-    def __init__(self, name, costs, payments):
+    def __init__(self, name, data):
         self.name = name
-        self.costs = costs
-        self.payments = payments
+        self.costs = data.get_participant_costs(self.name)
+        self.payments = data.get_participant_payments(self.name)
         self.to_pay = max(0, self.costs - self.payments)
         self.to_receive = max(0, self.payments - self.costs)
 
@@ -51,11 +47,11 @@ class Participant:
 
 
 class Transaction:
-    def __init__(self, p_from, p_to, amount):
+    def __init__(self, p_from, p_to, amount, data):
         self.p_from = p_from
         self.p_to = p_to
         self.amount = amount
-        self.rounded_amount = round(self.amount, 1)
+        self.rounded_amount = round(self.amount, data.rounding)
 
     def get_rounding_error(self):
         return abs(self.rounded_amount - self.amount)
@@ -69,7 +65,7 @@ class TransactionCombo:
         return sum([t.get_rounding_error() for t in self.transactions])
 
 
-def get_possible_transactions(participants, transactions):
+def get_possible_transactions(participants, transactions, data):
     possible_transactions = []
     for p_from in participants:
         to_pay_remaining = p_from.to_pay_remaining(transactions)
@@ -87,15 +83,17 @@ def get_possible_transactions(participants, transactions):
                 continue
 
             possible_transactions.append(
-                Transaction(p_from, p_to, min(to_pay_remaining, to_receive_remaining))
+                Transaction(
+                    p_from, p_to, min(to_pay_remaining, to_receive_remaining), data
+                )
             )
 
     return possible_transactions
 
 
-def get_transaction_combos(participants, already_made_transactions):
+def get_transaction_combos(participants, already_made_transactions, data):
     possible_transactions = get_possible_transactions(
-        participants, already_made_transactions
+        participants, already_made_transactions, data
     )
     if not possible_transactions:
         yield TransactionCombo(already_made_transactions)
@@ -104,7 +102,7 @@ def get_transaction_combos(participants, already_made_transactions):
     for possible_transaction in possible_transactions:
         transactions = already_made_transactions[:]
         transactions.append(possible_transaction)
-        for combo in get_transaction_combos(participants, transactions):
+        for combo in get_transaction_combos(participants, transactions, data):
             yield combo
 
 
@@ -123,9 +121,9 @@ def get_least_rounding_errors_combo(combos):
     return least_rounding_error[0]
 
 
-def get_best_transactions(participants):
+def get_best_transactions(participants, data):
     return get_least_rounding_errors_combo(
-        get_least_transfers_combos(get_transaction_combos(participants, []))
+        get_least_transfers_combos(get_transaction_combos(participants, [], data))
     )
 
 
@@ -144,15 +142,43 @@ def print_results(participants, combo):
     print("Total rounding error: {:.2f}".format(combo.get_rounding_error()))
 
 
-def main():
+class JsonFile(click.File):
+    name = "json_file"
+
+    def __init__(self):
+        super().__init__()
+
+    def convert(self, value, param, ctx):
+        f = super().convert(value, param, ctx)
+        if f:
+            try:
+                j = json.load(f)
+                return j
+            except Exception as e:
+                self.fail(f"Could not parse json file: {value!r}: {e}", param, ctx)
+            finally:
+                f.close()
+
+
+@click.command()
+@click.option(
+    "--round",
+    "rounding",
+    default=1,
+    help="Number of decimals to round transactions to",
+    show_default=True,
+)
+@click.argument("data_file", type=JsonFile())
+def calculate(rounding, data_file):
+    d = Data()
+    d.rounding = rounding
+    d.data = data_file
     participants = []
-    for name in input_data["participants"]:
-        costs = get_participant_costs(name)
-        payments = get_participant_payments(name)
-        participants.append(Participant(name, costs, payments))
-    transactions = get_best_transactions(participants)
+    for name in d.participants:
+        participants.append(Participant(name, d))
+    transactions = get_best_transactions(participants, d)
     print_results(participants, transactions)
 
 
 if __name__ == "__main__":
-    main()
+    calculate()
