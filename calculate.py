@@ -17,11 +17,6 @@ input_data = {
     },
 }
 
-import decimal
-from decimal import Decimal as D
-
-decimal.getcontext().prec = 2
-
 payments = input_data["payments"]
 shared_costs = sum([value.get("yhteinen", 0) for value in payments.values()])
 # print("Shared costs: {}".format(shared_costs))
@@ -110,7 +105,7 @@ def print_results(participants, transactions):
     for p in participants:
         print(
             "{}\t{:.2f}\t{:.2f}\t\t{:.2f}\t{:.2f}".format(
-                p.name, D(p.costs), D(p.payments), D(p.to_pay), D(p.to_receive)
+                p.name, p.costs, p.payments, p.to_pay, p.to_receive
             )
         )
     print()
