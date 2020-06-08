@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 input_data = {
     "participants": ["Timo", "Niko", "Ville", "Sami", "Tapio", "Tomi"],
     # payments: First key is original payer, second key is intended payer.
