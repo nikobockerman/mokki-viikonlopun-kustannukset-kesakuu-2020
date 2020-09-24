@@ -5,9 +5,9 @@ import json
 
 
 class Data:
-    def __init__(self):
-        self.rounding = 1
-        self.data = None
+    def __init__(self, rounding, data):
+        self.rounding = rounding
+        self.data = data
 
     @property
     def payments(self):
@@ -24,7 +24,6 @@ class Data:
     def get_participant_costs(self, name):
         shared = self.shared_costs / len(self.participants) * 100 // 1 / 100
         pays = [value.get(name, 0) for value in self.payments.values()]
-        # print("{}: shared={}; payments={} => {}".format(name, shared, pays, sum(pays)))
         return shared + sum(pays)
 
     def get_participant_payments(self, name):
@@ -170,9 +169,7 @@ class JsonFile(click.File):
 )
 @click.argument("data_file", type=JsonFile())
 def calculate(rounding, data_file):
-    d = Data()
-    d.rounding = rounding
-    d.data = data_file
+    d = Data(rounding, data_file)
     participants = []
     for name in d.participants:
         participants.append(Participant(name, d))
